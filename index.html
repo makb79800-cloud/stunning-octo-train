@@ -1,0 +1,2231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VITALIS | Premium Fitness Coaching</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* --- CSS VARIABLES & RESET --- */
+        :root {
+            --primary: #D4AF37;
+            --primary-hover: #b5922b;
+            --bg-dark: #0a0a0a;
+            --bg-card: #141414;
+            --text-white: #ffffff;
+            --text-gray: #a0a0a0;
+            --transition: all 0.3s ease;
+            --error: #ff4444;
+            --success: #00C851;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-white);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* FIX: Prevent body from getting stuck in overflow hidden state */
+        body.modal-open {
+            overflow: hidden;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        a { 
+            text-decoration: none; 
+            color: inherit;
+            cursor: pointer;
+        }
+        
+        ul { list-style: none; }
+        img { max-width: 100%; display: block; }
+
+        /* --- UTILITIES --- */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: var(--primary);
+            color: #000;
+            font-weight: 600;
+            text-transform: uppercase;
+            border: 2px solid var(--primary);
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.9rem;
+            /* FIX: Ensure buttons don't inherit problematic styles */
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background-color: transparent;
+            color: var(--primary);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--primary);
+            color: #000;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-gray);
+            margin-bottom: 3rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* --- AUTH FORM STYLES --- */
+        .auth-form-container {
+            max-width: 450px;
+            margin: 0 auto;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .auth-form-container h3 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 30px;
+        }
+
+        .auth-form-group {
+            margin-bottom: 20px;
+        }
+
+        .auth-form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+
+        .auth-form-group input {
+            width: 100%;
+            padding: 12px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            color: #fff;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+
+        .auth-form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .auth-error {
+            color: var(--error);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .auth-toggle {
+            text-align: center;
+            margin-top: 20px;
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+
+        .auth-toggle a {
+            color: var(--primary);
+        }
+
+        /* --- DASHBOARD STYLES --- */
+        .dashboard-page {
+            padding: 120px 0 80px;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--bg-card), #1a1a1a);
+            padding: 40px;
+            border-radius: 8px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .dashboard-header h2 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .dashboard-card {
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .dashboard-card h4 {
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .dashboard-card p {
+            color: var(--text-gray);
+            margin-bottom: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #333;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            background: #0a0a0a;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .user-details h4 {
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .user-details p {
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+
+        /* --- LOADING SPINNER --- */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .btn-loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* --- AUTH MODAL --- */
+        .auth-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+            /* FIX: Ensure modal doesn't block clicks when hidden */
+            pointer-events: none;
+        }
+
+        .auth-modal-overlay.active {
+            display: flex;
+            pointer-events: auto;
+        }
+
+        .auth-modal-content {
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 450px;
+            position: relative;
+            border: 1px solid var(--primary);
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .close-auth-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #fff;
+            z-index: 10;
+        }
+
+        /* --- HEADER & NAV --- */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+            padding: 15px 0;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-white);
+            font-family: 'Montserrat', sans-serif;
+            letter-spacing: 2px;
+        }
+
+        .logo span { color: var(--primary); }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--primary);
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            color: var(--text-white);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* --- USER MENU --- */
+        .user-menu {
+            position: relative;
+        }
+
+        .user-menu-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            padding: 8px 15px;
+            background: rgba(212, 175, 55, 0.1);
+            border-radius: 4px;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .user-menu-btn:hover {
+            background: rgba(212, 175, 55, 0.2);
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--bg-card);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            padding: 10px 0;
+            min-width: 200px;
+            display: none;
+            z-index: 1001;
+        }
+
+        .user-dropdown.active {
+            display: block;
+        }
+
+        .user-dropdown a {
+            display: block;
+            padding: 10px 20px;
+            color: var(--text-gray);
+            transition: var(--transition);
+        }
+
+        .user-dropdown a:hover {
+            background: rgba(212, 175, 55, 0.1);
+            color: var(--primary);
+        }
+
+        .user-dropdown .divider {
+            height: 1px;
+            background: rgba(255,255,255,0.1);
+            margin: 5px 0;
+        }
+
+        /* --- PAGE SECTIONS --- */
+        .page-section {
+            display: none;
+            padding-top: 80px;
+            min-height: 100vh;
+            animation: fadeIn 0.6s ease-in-out;
+        }
+
+        .page-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- HOME PAGE --- */
+        #home-hero {
+            height: 100vh;
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding-top: 0;
+            margin-top: -80px;
+        }
+
+        .hero-content h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            color: #ddd;
+            margin-bottom: 30px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .about-section {
+            padding: 80px 0;
+            background-color: var(--bg-card);
+        }
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            align-items: center;
+        }
+
+        .about-text h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.8rem;
+        }
+
+        .about-text p {
+            margin-bottom: 20px;
+            color: var(--text-gray);
+        }
+
+        .about-image img {
+            border-radius: 4px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .home-services-preview {
+            padding: 80px 0;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .preview-card {
+            background: var(--bg-card);
+            padding: 30px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .preview-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary);
+        }
+
+        .preview-card i {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        /* --- SERVICES PAGE --- */
+        .services-page {
+            padding: 120px 0 80px;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+
+        .service-card {
+            background: var(--bg-card);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: var(--transition);
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            border-color: var(--primary);
+        }
+
+        .service-img {
+            height: 250px;
+            width: 100%;
+            object-fit: cover;
+        }
+
+        .service-content {
+            padding: 25px;
+        }
+
+        .service-price {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .service-content h3 {
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+
+        .service-content p {
+            color: var(--text-gray);
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+
+        .service-features {
+            margin-bottom: 25px;
+        }
+
+        .service-features li {
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #ccc;
+            display: flex;
+            align-items: center;
+        }
+
+        .service-features li i {
+            color: var(--primary);
+            margin-right: 10px;
+            font-size: 0.8rem;
+        }
+
+        /* --- SERVICE DETAIL PAGE --- */
+        .detail-header {
+            height: 60vh;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: -80px;
+        }
+
+        .detail-header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+        }
+
+        .detail-header-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+        }
+
+        .detail-body {
+            padding: 80px 0;
+            background: var(--bg-dark);
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 50px;
+        }
+
+        .detail-info h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .detail-info h4 {
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .detail-info p {
+            color: var(--text-gray);
+            margin-bottom: 15px;
+        }
+
+        .detail-sidebar {
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: 8px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+
+        .price-tag {
+            font-size: 2.5rem;
+            color: var(--text-white);
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .price-sub {
+            color: var(--text-gray);
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+            display: block;
+        }
+
+        /* --- CONTACT PAGE --- */
+        .contact-page {
+            padding: 120px 0 80px;
+        }
+
+        .contact-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+        }
+
+        .contact-form {
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 12px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            color: #fff;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .contact-info-box {
+            padding: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+
+        .info-item i {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-right: 20px;
+            margin-top: 5px;
+        }
+
+        .quote-section {
+            margin-top: 50px;
+            padding: 40px;
+            background: linear-gradient(45deg, #1a1a1a, #0d0d0d);
+            border-left: 4px solid var(--primary);
+            text-align: center;
+        }
+
+        .quote-text {
+            font-style: italic;
+            font-size: 1.2rem;
+            color: #ddd;
+        }
+
+        /* --- CHAT WIDGET --- */
+        .chat-widget {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 999;
+        }
+
+        .chat-btn {
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+            transition: var(--transition);
+        }
+
+        .chat-btn:hover { transform: scale(1.1); }
+
+        .chat-window {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 300px;
+            background: var(--bg-card);
+            border: 1px solid #333;
+            border-radius: 8px;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .chat-window.active {
+            display: flex;
+        }
+
+        .chat-header {
+            background: #222;
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-body {
+            height: 250px;
+            padding: 15px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+
+        .chat-input-area {
+            padding: 10px;
+            border-top: 1px solid #333;
+            display: flex;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            background: #0a0a0a;
+            border: none;
+            padding: 8px;
+            color: #fff;
+            border-radius: 4px;
+        }
+
+        /* --- REGISTER PAGE --- */
+        .register-page {
+            padding: 120px 0 80px;
+        }
+
+        .register-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 8px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        /* --- PAYMENT MODAL --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+            pointer-events: none;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            border: 1px solid var(--primary);
+            position: relative;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #fff;
+            z-index: 10;
+        }
+
+        .payment-methods {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            font-size: 2rem;
+            color: #555;
+        }
+        
+        .payment-methods i.active {
+            color: var(--primary);
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            background: #050505;
+            padding: 50px 0 20px;
+            border-top: 1px solid #222;
+            margin-top: 50px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-col h4 {
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .footer-col ul li {
+            margin-bottom: 10px;
+        }
+
+        .footer-col ul li a {
+            color: var(--text-gray);
+            transition: var(--transition);
+        }
+
+        .footer-col ul li a:hover {
+            color: var(--primary);
+        }
+
+        .social-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .social-links a {
+            width: 40px;
+            height: 40px;
+            background: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        .social-links a:hover {
+            background: var(--primary);
+            color: #000;
+        }
+
+        .copyright {
+            text-align: center;
+            color: #555;
+            font-size: 0.8rem;
+            padding-top: 20px;
+            border-top: 1px solid #111;
+        }
+
+        /* --- ALERT SYSTEM --- */
+        .alert-container {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            z-index: 5000;
+        }
+
+        .alert {
+            padding: 15px 25px;
+            border-radius: 4px;
+            color: white;
+            margin-bottom: 10px;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .alert.success {
+            background: var(--success);
+        }
+
+        .alert.error {
+            background: var(--error);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(400px); opacity: 0; }
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 70px;
+                left: 0;
+                width: 100%;
+                background: var(--bg-card);
+                flex-direction: column;
+                padding: 20px;
+                text-align: center;
+            }
+            
+            .nav-links.active { display: flex; }
+            .mobile-menu-btn { display: block; }
+            
+            .hero-content h1 { font-size: 2.5rem; }
+            .about-grid, .contact-wrapper, .detail-grid { grid-template-columns: 1fr; }
+            .detail-header { height: 40vh; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="container nav-container">
+            <a href="#" class="logo" onclick="navigateTo('home'); return false;">VITALIS<span>.</span></a>
+            <div class="mobile-menu-btn" onclick="toggleMenu()">
+                <i class="fas fa-bars"></i>
+            </div>
+            <nav class="nav-links" id="navLinks">
+                <a href="#" onclick="navigateTo('home'); return false;">Home</a>
+                <a href="#" onclick="navigateTo('services'); return false;">Services</a>
+                <a href="#" onclick="navigateTo('contact'); return false;">Contact</a>
+                <div id="auth-nav-guest">
+                    <a href="#" onclick="openAuthModal('login'); return false;" class="btn" style="padding: 8px 20px; margin-left: 10px;">Login</a>
+                </div>
+                <div id="auth-nav-user" style="display: none;">
+                    <div class="user-menu">
+                        <div class="user-menu-btn" onclick="toggleUserDropdown()">
+                            <div class="user-avatar" id="user-avatar" style="width: 35px; height: 35px; font-size: 0.9rem;">U</div>
+                            <span id="user-name-nav">User</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="user-dropdown" id="user-dropdown">
+                            <a href="#" onclick="navigateTo('dashboard'); return false;"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                            <a href="#" onclick="navigateTo('services'); return false;"><i class="fas fa-dumbbell"></i> Programs</a>
+                            <div class="divider"></div>
+                            <a href="#" onclick="handleLogout(); return false;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Auth Modal -->
+    <div class="auth-modal-overlay" id="authModal">
+        <div class="auth-modal-content">
+            <span class="close-auth-modal" onclick="closeAuthModal()">&times;</span>
+            
+            <!-- Login Form -->
+            <div id="login-form-container">
+                <h3>Member Login</h3>
+                <form onsubmit="handleLogin(event)">
+                    <div class="auth-form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="login-email" required placeholder="your@email.com">
+                        <p class="auth-error" id="login-email-error"></p>
+                    </div>
+                    <div class="auth-form-group">
+                        <label>Password</label>
+                        <input type="password" id="login-password" required placeholder="••••••••">
+                        <p class="auth-error" id="login-password-error"></p>
+                    </div>
+                    <p class="auth-error" id="login-general-error"></p>
+                    <button type="submit" class="btn" id="login-btn" style="width: 100%">
+                        <span id="login-btn-text">Login</span>
+                    </button>
+                </form>
+                <div class="auth-toggle">
+                    Don't have an account? <a onclick="showRegisterForm()">Sign Up</a>
+                </div>
+            </div>
+
+            <!-- Register Form -->
+            <div id="register-form-container" style="display: none;">
+                <h3>Create Account</h3>
+                <form onsubmit="handleRegister(event)">
+                    <div class="auth-form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="register-name" required placeholder="John Doe">
+                        <p class="auth-error" id="register-name-error"></p>
+                    </div>
+                    <div class="auth-form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="register-email" required placeholder="your@email.com">
+                        <p class="auth-error" id="register-email-error"></p>
+                    </div>
+                    <div class="auth-form-group">
+                        <label>Password</label>
+                        <input type="password" id="register-password" required placeholder="••••••••" minlength="6">
+                        <p class="auth-error" id="register-password-error"></p>
+                        <p style="font-size: 0.75rem; color: #666; margin-top: 5px;">Minimum 6 characters</p>
+                    </div>
+                    <div class="auth-form-group">
+                        <label>Confirm Password</label>
+                        <input type="password" id="register-confirm-password" required placeholder="••••••••">
+                        <p class="auth-error" id="register-confirm-error"></p>
+                    </div>
+                    <p class="auth-error" id="register-general-error"></p>
+                    <button type="submit" class="btn" id="register-btn" style="width: 100%">
+                        <span id="register-btn-text">Create Account</span>
+                    </button>
+                </form>
+                <div class="auth-toggle">
+                    Already have an account? <a onclick="showLoginForm()">Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main id="main-content">
+
+        <!-- Home Page -->
+        <section id="home" class="page-section active">
+            <div id="home-hero">
+                <div class="container hero-content">
+                    <h1>Forge Your Legacy<br><span style="color: var(--primary);">Transform Your Life</span></h1>
+                    <p>Experience elite fitness coaching tailored to your physiology. Join the exclusive community dedicated to peak performance and luxury wellness.</p>
+                    <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+                        <button class="btn" onclick="handleJoinNow()">Start Transformation</button>
+                        <button class="btn btn-outline" onclick="navigateTo('services')">Explore Programs</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="about-section">
+                <div class="container">
+                    <div class="about-grid">
+                        <div class="about-text">
+                            <h3>Our Vision</h3>
+                            <p>At VITALIS, we believe fitness is not just a routine, but a lifestyle of excellence. Our mission is to provide world-class coaching that blends science, discipline, and luxury.</p>
+                            <p>We don't just build bodies; we build confidence, resilience, and a legacy of health.</p>
+                            <button class="btn btn-outline" onclick="navigateTo('contact')">Learn More</button>
+                        </div>
+                        <div class="about-image">
+                            <img src="https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=800&q=80" alt="Luxury Gym">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="home-services-preview">
+                <div class="container">
+                    <h2 class="section-title">Elite Programs</h2>
+                    <p class="section-subtitle">Choose your path to greatness.</p>
+                    <div class="preview-grid">
+                        <div class="preview-card" onclick="showServiceDetail('fat-loss')">
+                            <i class="fas fa-fire"></i>
+                            <h4>Fat Loss</h4>
+                            <p style="color: #888; font-size: 0.9rem; margin-top: 10px;">Sculpt & Shred</p>
+                        </div>
+                        <div class="preview-card" onclick="showServiceDetail('muscle')">
+                            <i class="fas fa-dumbbell"></i>
+                            <h4>Muscle Build</h4>
+                            <p style="color: #888; font-size: 0.9rem; margin-top: 10px;">Strength & Size</p>
+                        </div>
+                        <div class="preview-card" onclick="showServiceDetail('women')">
+                            <i class="fas fa-female"></i>
+                            <h4>Women Only</h4>
+                            <p style="color: #888; font-size: 0.9rem; margin-top: 10px;">Empower & Tone</p>
+                        </div>
+                        <div class="preview-card" onclick="showServiceDetail('challenge')">
+                            <i class="fas fa-stopwatch"></i>
+                            <h4>60-Day Challenge</h4>
+                            <p style="color: #888; font-size: 0.9rem; margin-top: 10px;">Total Transformation</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard Page -->
+        <section id="dashboard" class="page-section dashboard-page">
+            <div class="container">
+                <div class="dashboard-header">
+                    <div class="user-info">
+                        <div class="user-avatar" id="dashboard-avatar">U</div>
+                        <div class="user-details">
+                            <h4 id="dashboard-name">Welcome Back</h4>
+                            <p id="dashboard-email">user@email.com</p>
+                            <p style="color: var(--primary); font-size: 0.85rem; margin-top: 5px;">
+                                <i class="fas fa-crown"></i> Premium Member
+                            </p>
+                        </div>
+                    </div>
+                    <h2>Your Fitness Dashboard</h2>
+                    <p style="color: var(--text-gray);">Track your progress, access your programs, and connect with your coach.</p>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <h4><i class="fas fa-chart-line"></i> Current Program</h4>
+                        <p id="user-program">No active program</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 0%;" id="program-progress"></div>
+                        </div>
+                        <p style="font-size: 0.85rem; color: #666;">Progress: <span id="progress-text">0%</span></p>
+                        <button class="btn btn-outline" style="margin-top: 15px; width: 100%;" onclick="navigateTo('services')">Browse Programs</button>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <h4><i class="fas fa-calendar-check"></i> This Week's Workouts</h4>
+                        <p>Completed: <span style="color: var(--primary); font-weight: 700;">3/5</span></p>
+                        <ul style="color: var(--text-gray); font-size: 0.9rem; margin-top: 15px;">
+                            <li style="margin-bottom: 8px;"><i class="fas fa-check" style="color: var(--success); margin-right: 10px;"></i> Monday - Upper Body</li>
+                            <li style="margin-bottom: 8px;"><i class="fas fa-check" style="color: var(--success); margin-right: 10px;"></i> Wednesday - Lower Body</li>
+                            <li style="margin-bottom: 8px;"><i class="fas fa-check" style="color: var(--success); margin-right: 10px;"></i> Friday - Full Body</li>
+                            <li style="margin-bottom: 8px;"><i class="far fa-circle" style="color: #666; margin-right: 10px;"></i> Saturday - Cardio</li>
+                            <li><i class="far fa-circle" style="color: #666; margin-right: 10px;"></i> Sunday - Rest</li>
+                        </ul>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <h4><i class="fas fa-utensils"></i> Nutrition Plan</h4>
+                        <p>Daily Calories: <span style="color: var(--primary); font-weight: 700;">2,200 kcal</span></p>
+                        <p style="font-size: 0.9rem; color: #666; margin-top: 10px;">Protein: 180g | Carbs: 220g | Fat: 65g</p>
+                        <button class="btn btn-outline" style="margin-top: 15px; width: 100%;" onclick="showAlert('Meal plan feature coming soon!', 'success')">View Meal Plan</button>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <h4><i class="fas fa-trophy"></i> Achievements</h4>
+                        <p>Current Streak: <span style="color: var(--primary); font-weight: 700;">12 days</span></p>
+                        <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                            <span style="background: rgba(212, 175, 55, 0.2); color: var(--primary); padding: 5px 10px; border-radius: 4px; font-size: 0.8rem;">🔥 Week Warrior</span>
+                            <span style="background: rgba(212, 175, 55, 0.2); color: var(--primary); padding: 5px 10px; border-radius: 4px; font-size: 0.8rem;">💪 Strong Start</span>
+                            <span style="background: rgba(212, 175, 55, 0.2); color: var(--primary); padding: 5px 10px; border-radius: 4px; font-size: 0.8rem;">🎯 Goal Getter</span>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <h4><i class="fas fa-envelope"></i> Messages from Coach</h4>
+                        <p style="font-size: 0.9rem; color: #ccc;">"Great progress this week! Keep up the intensity on your leg days."</p>
+                        <button class="btn btn-outline" style="margin-top: 15px; width: 100%;" onclick="toggleChat()">Contact Coach</button>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <h4><i class="fas fa-cog"></i> Account Settings</h4>
+                        <p>Update your profile, change password, or manage subscription.</p>
+                        <button class="btn btn-outline" style="margin-top: 15px; width: 100%;" onclick="showAlert('Settings feature coming soon!', 'success')">Manage Account</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Services Page -->
+        <section id="services" class="page-section services-page">
+            <div class="container">
+                <h2 class="section-title">Our Services</h2>
+                <p class="section-subtitle">Comprehensive programs designed for results.</p>
+                
+                <div class="services-grid">
+                    <div class="service-card">
+                        <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80" alt="Fat Loss" class="service-img">
+                        <div class="service-content">
+                            <span class="service-price">$15 / month</span>
+                            <h3>Fat Loss Program</h3>
+                            <p>High-intensity metabolic conditioning combined with strategic nutrition to melt fat while preserving muscle.</p>
+                            <ul class="service-features">
+                                <li><i class="fas fa-check"></i> Custom Meal Plan</li>
+                                <li><i class="fas fa-check"></i> HIIT Workouts</li>
+                                <li><i class="fas fa-check"></i> Weekly Check-ins</li>
+                            </ul>
+                            <button class="btn" style="width: 100%" onclick="showServiceDetail('fat-loss')">View Details</button>
+                        </div>
+                    </div>
+
+                    <div class="service-card">
+                        <img src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=800&q=80" alt="Muscle Building" class="service-img">
+                        <div class="service-content">
+                            <span class="service-price">$15 / month</span>
+                            <h3>Muscle Building</h3>
+                            <p>Hypertrophy-focused training splits designed to maximize muscle growth and strength gains efficiently.</p>
+                            <ul class="service-features">
+                                <li><i class="fas fa-check"></i> High-Protein Diet</li>
+                                <li><i class="fas fa-check"></i> Strength Training</li>
+                                <li><i class="fas fa-check"></i> Progress Tracking</li>
+                            </ul>
+                            <button class="btn" style="width: 100%" onclick="showServiceDetail('muscle')">View Details</button>
+                        </div>
+                    </div>
+
+                    <div class="service-card">
+                        <img src="https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=800&q=80" alt="Women Only" class="service-img">
+                        <div class="service-content">
+                            <span class="service-price">$15 / month</span>
+                            <h3>Women Only Program</h3>
+                            <p>A supportive environment focusing on toning, core strength, and flexibility with female-specific physiology in mind.</p>
+                            <ul class="service-features">
+                                <li><i class="fas fa-check"></i> Pilates & Yoga</li>
+                                <li><i class="fas fa-check"></i> Hormone-Balanced Diet</li>
+                                <li><i class="fas fa-check"></i> Community Support</li>
+                            </ul>
+                            <button class="btn" style="width: 100%" onclick="showServiceDetail('women')">View Details</button>
+                        </div>
+                    </div>
+
+                    <div class="service-card">
+                        <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80" alt="60 Day Challenge" class="service-img">
+                        <div class="service-content">
+                            <span class="service-price">$125 One-Time</span>
+                            <h3>60-Day Challenge</h3>
+                            <p>The ultimate transformation bootcamp. Intense daily workouts, strict nutrition, and daily accountability for 2 months.</p>
+                            <ul class="service-features">
+                                <li><i class="fas fa-check"></i> Daily Coaching</li>
+                                <li><i class="fas fa-check"></i> Full Body Reset</li>
+                                <li><i class="fas fa-check"></i> Before/After Analysis</li>
+                            </ul>
+                            <button class="btn" style="width: 100%" onclick="showServiceDetail('challenge')">View Details</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Service Detail Page -->
+        <section id="service-detail" class="page-section">
+            <div id="detail-header" class="detail-header">
+                <div class="detail-header-content">
+                    <h1 id="detail-title">Program Title</h1>
+                    <p id="detail-subtitle" style="color: #ccc; font-size: 1.2rem;">Program Subtitle</p>
+                </div>
+            </div>
+            <div class="detail-body">
+                <div class="container detail-grid">
+                    <div class="detail-info">
+                        <h2 id="detail-heading">Program Overview</h2>
+                        <div id="detail-description"></div>
+                        <h4>What You Get</h4>
+                        <ul id="detail-features" style="color: var(--text-gray); line-height: 2;"></ul>
+                        <h4>Expected Results</h4>
+                        <p id="detail-results" style="color: var(--text-gray);"></p>
+                    </div>
+                    <div class="detail-sidebar">
+                        <h3>Join Today</h3>
+                        <div class="price-tag" id="detail-price">$00</div>
+                        <span class="price-sub" id="detail-period">per month</span>
+                        <button class="btn" style="width: 100%" onclick="handleServicePurchase()">Start Now</button>
+                        <p style="margin-top: 15px; font-size: 0.8rem; color: #666; text-align: center;">Secure payment via SSL</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Page -->
+        <section id="contact" class="page-section contact-page">
+            <div class="container">
+                <h2 class="section-title">Get In Touch</h2>
+                <p class="section-subtitle">Have questions? Our elite coaches are ready to assist you.</p>
+                
+                <div class="contact-wrapper">
+                    <div class="contact-form">
+                        <form onsubmit="handleContactSubmit(event)">
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <input type="text" required placeholder="John Doe">
+                            </div>
+                            <div class="form-group">
+                                <label>Email Address</label>
+                                <input type="email" required placeholder="john@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Message</label>
+                                <textarea rows="5" required placeholder="How can we help you?"></textarea>
+                            </div>
+                            <button type="submit" class="btn">Send Message</button>
+                        </form>
+                    </div>
+                    
+                    <div class="contact-info-box">
+                        <div class="info-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <div>
+                                <h4>Visit Us</h4>
+                                <p style="color: #888;">123 Luxury Lane, Beverly Hills, CA 90210</p>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-envelope"></i>
+                            <div>
+                                <h4>Email Us</h4>
+                                <p style="color: #888;">support@vitalis-fitness.com</p>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-phone"></i>
+                            <div>
+                                <h4>Call Us</h4>
+                                <p style="color: #888;">+1 (555) 123-4567</p>
+                            </div>
+                        </div>
+
+                        <div class="quote-section">
+                            <p class="quote-text">"The only bad workout is the one that didn't happen."</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Register Page -->
+        <section id="register" class="page-section register-page">
+            <div class="container">
+                <h2 class="section-title">Join VITALIS</h2>
+                <p class="section-subtitle">Start your journey today.</p>
+                
+                <div class="register-container">
+                    <div style="text-align: center; padding: 40px 0;">
+                        <i class="fas fa-lock" style="font-size: 3rem; color: var(--primary); margin-bottom: 20px;"></i>
+                        <h3 style="margin-bottom: 15px;">Secure Registration</h3>
+                        <p style="color: var(--text-gray); margin-bottom: 30px;">
+                            Create your account to access our premium fitness programs and personalized coaching.
+                        </p>
+                        <button class="btn" onclick="openAuthModal('register')">Create Account</button>
+                        <p style="margin-top: 20px; color: #666; font-size: 0.9rem;">
+                            Already have an account? <a onclick="openAuthModal('login')" style="color: var(--primary);">Login here</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Chat Widget -->
+    <div class="chat-widget">
+        <div class="chat-window" id="chatWindow">
+            <div class="chat-header">
+                <span>Live Support</span>
+                <i class="fas fa-times" style="cursor: pointer;" onclick="toggleChat()"></i>
+            </div>
+            <div class="chat-body">
+                <p><strong>Support:</strong> Hello! How can we help you transform today?</p>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" placeholder="Type message...">
+                <button style="background: none; border: none; color: var(--primary); cursor: pointer;"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+        <div class="chat-btn" onclick="toggleChat()">
+            <i class="fas fa-comment-dots"></i>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal-overlay" id="paymentModal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h3 style="color: var(--primary); margin-bottom: 20px;">Secure Payment</h3>
+            <p style="color: #ccc; margin-bottom: 20px;">Complete your registration for <span id="modal-amount" style="color: #fff; font-weight: bold;">$0</span></p>
+            
+            <div class="payment-methods">
+                <i class="fab fa-cc-visa active"></i>
+                <i class="fab fa-cc-mastercard"></i>
+                <i class="fab fa-cc-paypal"></i>
+            </div>
+
+            <form onsubmit="processPayment(event)">
+                <div class="form-group">
+                    <input type="text" placeholder="Card Number" required style="text-align: center; letter-spacing: 2px;">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" placeholder="MM/YY" required style="flex: 1; text-align: center;">
+                    <input type="text" placeholder="CVC" required style="flex: 1; text-align: center;">
+                </div>
+                <button type="submit" class="btn" style="width: 100%; margin-top: 20px;">Pay Now</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div class="alert-container" id="alertContainer"></div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <a href="#" class="logo" onclick="navigateTo('home'); return false;">VITALIS<span>.</span></a>
+                    <p style="color: #666; margin-top: 15px; font-size: 0.9rem;">
+                        Redefining luxury fitness with personalized coaching and premium facilities.
+                    </p>
+                </div>
+                <div class="footer-col">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#" onclick="navigateTo('home'); return false;">Home</a></li>
+                        <li><a href="#" onclick="navigateTo('services'); return false;">Services</a></li>
+                        <li><a href="#" onclick="navigateTo('register'); return false;">Register</a></li>
+                        <li><a href="#" onclick="navigateTo('contact'); return false;">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Connect</h4>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-telegram-plane"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="copyright">
+                &copy; 2023 VITALIS Fitness. All Rights Reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // ============================================
+        // FIREBASE CONFIG - REPLACE WITH YOUR VALUES
+        // ============================================
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY_HERE",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
+        };
+
+        // Initialize Firebase (with error handling)
+        let auth, db;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            db = firebase.firestore();
+        } catch (error) {
+            console.warn('Firebase not configured. Using demo mode.');
+        }
+
+        // ============================================
+        // STATE MANAGEMENT
+        // ============================================
+        let currentUser = null;
+        let currentServiceId = null;
+        let isNavigationLocked = false; // FIX: Prevent navigation spam
+
+        // ============================================
+        // AUTH STATE LISTENER
+        // ============================================
+        if (auth) {
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    currentUser = user;
+                    updateUIForLoggedInUser(user);
+                } else {
+                    currentUser = null;
+                    updateUIForLoggedOutUser();
+                }
+            });
+        }
+
+        function updateUIForLoggedInUser(user) {
+            document.getElementById('auth-nav-guest').style.display = 'none';
+            document.getElementById('auth-nav-user').style.display = 'block';
+            
+            const userName = user.displayName || user.email.split('@')[0];
+            const userInitial = userName.charAt(0).toUpperCase();
+            
+            document.getElementById('user-name-nav').innerText = userName;
+            document.getElementById('user-avatar').innerText = userInitial;
+            document.getElementById('dashboard-name').innerText = `Welcome Back, ${userName}`;
+            document.getElementById('dashboard-email').innerText = user.email;
+            document.getElementById('dashboard-avatar').innerText = userInitial;
+            
+            if (db) {
+                loadUserData(user.uid);
+            }
+        }
+
+        function updateUIForLoggedOutUser() {
+            document.getElementById('auth-nav-guest').style.display = 'block';
+            document.getElementById('auth-nav-user').style.display = 'none';
+            
+            // FIX: Only redirect if currently on dashboard
+            const currentPage = document.querySelector('.page-section.active');
+            if (currentPage && currentPage.id === 'dashboard') {
+                navigateTo('home');
+            }
+        }
+
+        async function loadUserData(uid) {
+            try {
+                const doc = await db.collection('users').doc(uid).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (data.currentProgram) {
+                        document.getElementById('user-program').innerText = data.currentProgram;
+                        document.getElementById('program-progress').style.width = data.progress + '%';
+                        document.getElementById('progress-text').innerText = data.progress + '%';
+                    }
+                }
+            } catch (error) {
+                console.log('Error loading user data:', error);
+            }
+        }
+
+        // ============================================
+        // NAVIGATION (FIXED)
+        // ============================================
+        function navigateTo(pageId) {
+            // FIX: Prevent navigation spam
+            if (isNavigationLocked) return;
+            isNavigationLocked = true;
+            
+            // FIX: Close all modals and dropdowns first
+            closeAllModals();
+            document.getElementById('user-dropdown').classList.remove('active');
+            document.getElementById('navLinks').classList.remove('active');
+            
+            // Check auth for protected pages
+            const protectedPages = ['dashboard'];
+            if (protectedPages.includes(pageId) && !currentUser) {
+                openAuthModal('login');
+                showAlert('Please login to access this page.', 'error');
+                isNavigationLocked = false;
+                return;
+            }
+            
+            // Hide all sections
+            document.querySelectorAll('.page-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Show target section
+            const target = document.getElementById(pageId);
+            if (target) {
+                target.classList.add('active');
+                window.scrollTo(0, 0);
+            }
+
+            // FIX: Reset navigation lock after animation
+            setTimeout(() => {
+                isNavigationLocked = false;
+            }, 300);
+        }
+
+        function toggleMenu() {
+            document.getElementById('navLinks').classList.toggle('active');
+        }
+
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('user-dropdown');
+            dropdown.classList.toggle('active');
+        }
+
+        // FIX: Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const userMenu = document.querySelector('.user-menu');
+            const dropdown = document.getElementById('user-dropdown');
+            
+            if (userMenu && !userMenu.contains(event.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+
+        // ============================================
+        // MODAL MANAGEMENT (FIXED)
+        // ============================================
+        function openAuthModal(type = 'login') {
+            // FIX: Ensure body doesn't get stuck
+            document.body.classList.add('modal-open');
+            
+            const modal = document.getElementById('authModal');
+            modal.classList.add('active');
+            
+            if (type === 'register') {
+                showRegisterForm();
+            } else {
+                showLoginForm();
+            }
+            clearAuthErrors();
+        }
+
+        function closeAuthModal() {
+            document.body.classList.remove('modal-open');
+            document.getElementById('authModal').classList.remove('active');
+            clearAuthErrors();
+        }
+
+        function closeModal() {
+            document.getElementById('paymentModal').classList.remove('active');
+        }
+
+        function closeAllModals() {
+            closeAuthModal();
+            closeModal();
+            const chatWindow = document.getElementById('chatWindow');
+            if (chatWindow.classList.contains('active')) {
+                chatWindow.classList.remove('active');
+            }
+        }
+
+        function showLoginForm() {
+            document.getElementById('login-form-container').style.display = 'block';
+            document.getElementById('register-form-container').style.display = 'none';
+        }
+
+        function showRegisterForm() {
+            document.getElementById('login-form-container').style.display = 'none';
+            document.getElementById('register-form-container').style.display = 'block';
+        }
+
+        function clearAuthErrors() {
+            document.querySelectorAll('.auth-error').forEach(el => {
+                el.style.display = 'none';
+                el.innerText = '';
+            });
+        }
+
+        function showAuthError(elementId, message) {
+            const el = document.getElementById(elementId);
+            if (el) {
+                el.innerText = message;
+                el.style.display = 'block';
+            }
+        }
+
+        function setAuthLoading(buttonId, isLoading) {
+            const btn = document.getElementById(buttonId);
+            const btnText = document.getElementById(buttonId.replace('-btn', '-btn-text'));
+            
+            if (isLoading) {
+                btn.classList.add('btn-loading');
+                btn.disabled = true;
+                btnText.innerHTML = '<span class="loading-spinner"></span> Processing...';
+            } else {
+                btn.classList.remove('btn-loading');
+                btn.disabled = false;
+                btnText.innerText = buttonId.includes('login') ? 'Login' : 'Create Account';
+            }
+        }
+
+        // ============================================
+        // AUTHENTICATION (FIXED)
+        // ============================================
+        async function handleLogin(event) {
+            event.preventDefault();
+            event.stopPropagation(); // FIX: Prevent event bubbling
+            
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            clearAuthErrors();
+            setAuthLoading('login-btn', true);
+            
+            try {
+                if (auth) {
+                    await auth.signInWithEmailAndPassword(email, password);
+                } else {
+                    // Demo mode
+                    currentUser = { email, displayName: email.split('@')[0] };
+                    updateUIForLoggedInUser(currentUser);
+                }
+                closeAuthModal();
+                navigateTo('dashboard');
+                showAlert('Welcome back!', 'success');
+            } catch (error) {
+                console.error('Login error:', error);
+                let errorMessage = 'Login failed. Please try again.';
+                
+                if (error.code) {
+                    switch (error.code) {
+                        case 'auth/user-not-found':
+                            errorMessage = 'No account found with this email.';
+                            break;
+                        case 'auth/wrong-password':
+                            errorMessage = 'Incorrect password.';
+                            break;
+                        case 'auth/invalid-email':
+                            errorMessage = 'Invalid email address.';
+                            break;
+                        case 'auth/too-many-requests':
+                            errorMessage = 'Too many attempts. Please try again later.';
+                            break;
+                    }
+                }
+                
+                showAuthError('login-general-error', errorMessage);
+            } finally {
+                setAuthLoading('login-btn', false);
+            }
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+            event.stopPropagation(); // FIX: Prevent event bubbling
+            
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm-password').value;
+            
+            clearAuthErrors();
+            
+            if (password !== confirmPassword) {
+                showAuthError('register-confirm-error', 'Passwords do not match');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showAuthError('register-password-error', 'Password must be at least 6 characters');
+                return;
+            }
+            
+            setAuthLoading('register-btn', true);
+            
+            try {
+                if (auth) {
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    const user = userCredential.user;
+                    
+                    await user.updateProfile({ displayName: name });
+                    
+                    await db.collection('users').doc(user.uid).set({
+                        email: email,
+                        displayName: name,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        currentProgram: null,
+                        progress: 0,
+                        membershipStatus: 'free'
+                    });
+                } else {
+                    // Demo mode
+                    currentUser = { email, displayName: name };
+                    updateUIForLoggedInUser(currentUser);
+                }
+                
+                closeAuthModal();
+                navigateTo('dashboard');
+                showAlert('Account created successfully! Welcome to VITALIS.', 'success');
+            } catch (error) {
+                console.error('Register error:', error);
+                let errorMessage = 'Registration failed. Please try again.';
+                
+                if (error.code) {
+                    switch (error.code) {
+                        case 'auth/email-already-in-use':
+                            errorMessage = 'This email is already registered.';
+                            break;
+                        case 'auth/invalid-email':
+                            errorMessage = 'Invalid email address.';
+                            break;
+                        case 'auth/weak-password':
+                            errorMessage = 'Password is too weak.';
+                            break;
+                    }
+                }
+                
+                showAuthError('register-general-error', errorMessage);
+            } finally {
+                setAuthLoading('register-btn', false);
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                if (auth) {
+                    await auth.signOut();
+                }
+                currentUser = null;
+                toggleUserDropdown();
+                navigateTo('home');
+                showAlert('You have been logged out.', 'success');
+            } catch (error) {
+                console.error('Logout error:', error);
+                showAlert('Error logging out. Please try again.', 'error');
+            }
+        }
+
+        // ============================================
+        // BUTTON HANDLERS (FIXED)
+        // ============================================
+        function handleJoinNow() {
+            if (currentUser) {
+                navigateTo('dashboard');
+            } else {
+                openAuthModal('register');
+            }
+        }
+
+        function handleServicePurchase() {
+            if (!currentUser) {
+                openAuthModal('login');
+                showAlert('Please login to purchase a program.', 'error');
+                return;
+            }
+            
+            document.getElementById('paymentModal').classList.add('active');
+            document.body.classList.add('modal-open');
+        }
+
+        async function processPayment(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const btn = event.target.querySelector('button');
+            const originalText = btn.innerText;
+            
+            btn.innerText = "Processing...";
+            btn.disabled = true;
+
+            setTimeout(async () => {
+                if (currentUser && currentServiceId && db) {
+                    try {
+                        await db.collection('users').doc(currentUser.uid).update({
+                            currentProgram: servicesData[currentServiceId].title,
+                            progress: 0,
+                            membershipStatus: 'premium',
+                            purchasedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        
+                        showAlert('Payment successful! Welcome to your program.', 'success');
+                        navigateTo('dashboard');
+                    } catch (error) {
+                        console.error('Error saving program:', error);
+                        showAlert('Payment successful but error saving data.', 'error');
+                    }
+                } else {
+                    showAlert('Payment successful! Welcome to your program.', 'success');
+                    navigateTo('dashboard');
+                }
+                
+                closeModal();
+                btn.innerText = originalText;
+                btn.disabled = false;
+                event.target.reset();
+            }, 2000);
+        }
+
+        // ============================================
+        // SERVICE DETAIL (FIXED)
+        // ============================================
+        const servicesData = {
+            'fat-loss': {
+                title: "Fat Loss Program",
+                subtitle: "Sculpt Your Dream Physique",
+                image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1920&q=80",
+                price: "$15",
+                period: "per month",
+                description: "<p>Our Fat Loss Program is scientifically designed to maximize caloric expenditure while maintaining lean muscle mass.</p>",
+                features: ["Custom Meal Plan", "HIIT Workouts", "Weekly Check-ins", "24/7 Coach Support"],
+                results: "Expect to lose 1-2 lbs of pure fat per week."
+            },
+            'muscle': {
+                title: "Muscle Building Program",
+                subtitle: "Build Strength & Size",
+                image: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=1920&q=80",
+                price: "$15",
+                period: "per month",
+                description: "<p>Designed for hypertrophy, this program utilizes progressive overload principles.</p>",
+                features: ["5-Day Split Routine", "High-Protein Diet", "Progress Tracking", "Form Videos"],
+                results: "Gain visible muscle mass within 8 weeks."
+            },
+            'women': {
+                title: "Women Only Program",
+                subtitle: "Empower & Tone",
+                image: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=1920&q=80",
+                price: "$15",
+                period: "per month",
+                description: "<p>A holistic approach to female fitness with strength and flexibility balance.</p>",
+                features: ["Pilates Training", "Hormone-Balanced Diet", "Community Access", "Mobility Sessions"],
+                results: "Achieve a toned, lean physique."
+            },
+            'challenge': {
+                title: "60-Day Challenge",
+                subtitle: "Total Transformation Bootcamp",
+                image: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1920&q=80",
+                price: "$125",
+                period: "one-time payment",
+                description: "<p>Our most intensive program with daily workouts and strict nutrition.</p>",
+                features: ["Daily Workouts", "Clean Eating Plan", "Daily Check-ins", "Photoshoot"],
+                results: "Complete body transformation in 2 months."
+            }
+        };
+
+        function showServiceDetail(serviceId) {
+            const data = servicesData[serviceId];
+            if (!data) return;
+
+            currentServiceId = serviceId;
+
+            document.getElementById('detail-title').innerText = data.title;
+            document.getElementById('detail-subtitle').innerText = data.subtitle;
+            document.getElementById('detail-header').style.backgroundImage = `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('${data.image}')`;
+            
+            document.getElementById('detail-heading').innerText = data.title;
+            document.getElementById('detail-description').innerHTML = data.description;
+            document.getElementById('detail-price').innerText = data.price;
+            document.getElementById('detail-period').innerText = data.period;
+            document.getElementById('detail-results').innerText = data.results;
+
+            const featuresList = document.getElementById('detail-features');
+            featuresList.innerHTML = '';
+            data.features.forEach(feature => {
+                const li = document.createElement('li');
+                li.innerHTML = `<i class="fas fa-check-circle" style="color: var(--primary); margin-right: 10px;"></i> ${feature}`;
+                featuresList.appendChild(li);
+            });
+
+            navigateTo('service-detail');
+        }
+
+        // ============================================
+        // CONTACT & CHAT (FIXED)
+        // ============================================
+        function handleContactSubmit(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            showAlert('Message sent! Our team will contact you shortly.', 'success');
+            event.target.reset();
+        }
+
+        function toggleChat() {
+            const chatWindow = document.getElementById('chatWindow');
+            chatWindow.classList.toggle('active');
+        }
+
+        // ============================================
+        // ALERT SYSTEM (FIXED)
+        // ============================================
+        function showAlert(message, type = 'success') {
+            const container = document.getElementById('alertContainer');
+            
+            const alert = document.createElement('div');
+            alert.className = `alert ${type}`;
+            alert.innerText = message;
+            
+            container.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => alert.remove(), 300);
+            }, 3000);
+        }
+
+        // ============================================
+        // EVENT LISTENERS (FIXED - No conflicts)
+        // ============================================
+        // FIX: Close modals when clicking outside
+        document.addEventListener('click', function(event) {
+            const authModal = document.getElementById('authModal');
+            const paymentModal = document.getElementById('paymentModal');
+            
+            if (authModal.classList.contains('active') && !authModal.querySelector('.auth-modal-content').contains(event.target)) {
+                closeAuthModal();
+            }
+            
+            if (paymentModal.classList.contains('active') && !paymentModal.querySelector('.modal-content').contains(event.target)) {
+                closeModal();
+            }
+        });
+
+        // FIX: Close modals on Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeAllModals();
+            }
+        });
+
+        // FIX: Prevent default on all anchor tags to avoid page jumps
+        document.querySelectorAll('a[href="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+            });
+        });
+
+        // Initialize - ensure clean state
+        document.addEventListener('DOMContentLoaded', function() {
+            // Remove any stuck modal states
+            document.body.classList.remove('modal-open');
+            document.querySelectorAll('.modal-overlay, .auth-modal-overlay').forEach(modal => {
+                modal.classList.remove('active');
+            });
+            
+            // Ensure home page is active
+            navigateTo('home');
+        });
+
+        // Firebase security rules reference (commented)
+        /*
+        FIRESTORE SECURITY RULES:
+        rules_version = '2';
+        service cloud.firestore {
+          match /databases/{database}/documents {
+            match /users/{userId} {
+              allow read, write: if request.auth != null && request.auth.uid == userId;
+            }
+          }
+        }
+        */
+    </script>
+   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script> 
+   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script>
+const supabaseUrl = "https://mogajeozlubpilmwthen.supabase.co";
+const supabaseKey = "sb_publishable_2Ckzg9lFbonNSGvgoXWD0A_SgJO83wW";
+
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+</script>
+<script>
+async function signUp(email, password) {
+  const { data, error } = await supabase.auth.signUp({
+    email: email,
+    password: password
+  });
+
+  if (error) {
+    console.log(error.message);
+  } else {
+    console.log("User created");
+  }
+}
+</script>
+<script>
+async function login(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email,
+    password: password
+  });
+
+  if (error) {
+    console.log(error.message);
+  } else {
+    console.log("Logged in");
+  }
+}
+</script>
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+
+<button onclick="handleSignup()">Sign Up</button>
+<button onclick="handleLogin()">Login</button>
+
+<script>
+function handleSignup() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  signUp(email, password);
+}
+
+function handleLogin() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  login(email, password);
+}
+</script>
+<div style="max-width:300px; margin:auto; text-align:center;">
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
+
+  <button onclick="handleSignup()">Sign Up</button>
+  <button onclick="handleLogin()">Login</button>
+</div>
+<script>
+const supabaseUrl2 = "https://mogajeozlubpilmwthen.supabase.co";
+const supabaseKey2 = "sb_publishable_2Ckzg9lFbonNSGvgoXWD0A_SgJO83wW";
+
+const client = supabase.createClient(supabaseUrl, supabaseKey);
+
+async function handleSignup() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const { error } = await client.auth.signUp({ email, password });
+
+  if (error) alert(error.message);
+  else alert("Signup success");
+}
+
+async function handleLogin() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const { error } = await client.auth.signInWithPassword({ email, password });
+
+  if (error) alert(error.message);
+  else window.location.href = "/dashboard.html";
+}
+</script>
+window.location.href = "/dashboard.html";
+</body>
+</html>
+
